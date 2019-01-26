@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\User;
+use App\Role;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -40,6 +41,15 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
+    // Overided Function From RegisterUsers.php
+    public function showRegistrationForm()
+    {
+        //$roles = Role::where('slug','!=', 'admin')->where('slug', '!=', 'super-admin')->orderBy('name')->pluck('name','id');
+        $roles = Role::orderBy('name')->pluck('name','id');
+
+        return view('auth.register', compact('roles'));
+    }
+
     /**
      * Get a validator for an incoming registration request.
      *
@@ -52,6 +62,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'role' => ['required', 'exists:roles', 'id'],
         ]);
     }
 
@@ -63,10 +74,14 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        $user->roles()->attach($data['role']);
+
+        return $user;
     }
 }
